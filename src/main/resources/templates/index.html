@@ -1,0 +1,553 @@
+<!DOCTYPE html>
+<html lang="ko" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI 초음파 성별 예측 서비스</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        body {
+            font-family: 'Segoe UI', 'Apple SD Gothic Neo', sans-serif;
+            background: #0a0a0f;
+            color: #e0e0e0;
+            overflow-x: hidden;
+        }
+
+        /* NAV */
+        nav {
+            position: fixed;
+            top: 0; left: 0; right: 0;
+            z-index: 100;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 18px 60px;
+            background: rgba(10,10,15,0.85);
+            backdrop-filter: blur(12px);
+            border-bottom: 1px solid rgba(255,255,255,0.06);
+        }
+        .nav-logo {
+            font-size: 1.3rem;
+            font-weight: 700;
+            background: linear-gradient(135deg, #6c63ff, #48cae4);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+        .nav-links a {
+            color: #aaa;
+            text-decoration: none;
+            margin-left: 32px;
+            font-size: 0.9rem;
+            transition: color 0.2s;
+        }
+        .nav-links a:hover { color: #fff; }
+        .nav-links .btn-nav {
+            background: linear-gradient(135deg, #6c63ff, #48cae4);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            font-weight: 600;
+        }
+
+        /* HERO */
+        .hero {
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            text-align: center;
+            padding: 100px 20px 60px;
+            position: relative;
+        }
+        .hero::before {
+            content: '';
+            position: absolute;
+            top: 20%;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 700px;
+            height: 700px;
+            background: radial-gradient(circle, rgba(108,99,255,0.15) 0%, transparent 70%);
+            pointer-events: none;
+        }
+        .hero-badge {
+            display: inline-block;
+            padding: 6px 18px;
+            border: 1px solid rgba(108,99,255,0.5);
+            border-radius: 50px;
+            font-size: 0.8rem;
+            color: #6c63ff;
+            margin-bottom: 28px;
+            letter-spacing: 0.5px;
+        }
+        .hero h1 {
+            font-size: clamp(2.4rem, 6vw, 4.2rem);
+            font-weight: 800;
+            line-height: 1.15;
+            margin-bottom: 24px;
+            letter-spacing: -1px;
+        }
+        .hero h1 span {
+            background: linear-gradient(135deg, #6c63ff, #48cae4);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+        .hero p {
+            font-size: 1.15rem;
+            color: #888;
+            max-width: 560px;
+            line-height: 1.8;
+            margin-bottom: 44px;
+        }
+        .hero-btns {
+            display: flex;
+            gap: 16px;
+            flex-wrap: wrap;
+            justify-content: center;
+        }
+        .btn-primary {
+            padding: 14px 36px;
+            background: linear-gradient(135deg, #6c63ff, #48cae4);
+            border: none;
+            border-radius: 10px;
+            color: #fff;
+            font-size: 1rem;
+            font-weight: 600;
+            cursor: pointer;
+            text-decoration: none;
+            transition: opacity 0.2s, transform 0.2s;
+        }
+        .btn-primary:hover { opacity: 0.88; transform: translateY(-2px); }
+        .btn-secondary {
+            padding: 14px 36px;
+            background: transparent;
+            border: 1px solid rgba(255,255,255,0.15);
+            border-radius: 10px;
+            color: #ccc;
+            font-size: 1rem;
+            font-weight: 500;
+            cursor: pointer;
+            text-decoration: none;
+            transition: border-color 0.2s, color 0.2s, transform 0.2s;
+        }
+        .btn-secondary:hover { border-color: #6c63ff; color: #fff; transform: translateY(-2px); }
+
+        /* STATS */
+        .stats {
+            display: flex;
+            justify-content: center;
+            gap: 60px;
+            padding: 60px 20px;
+            border-top: 1px solid rgba(255,255,255,0.06);
+            border-bottom: 1px solid rgba(255,255,255,0.06);
+            flex-wrap: wrap;
+        }
+        .stat-item { text-align: center; }
+        .stat-item .num {
+            font-size: 2.4rem;
+            font-weight: 800;
+            background: linear-gradient(135deg, #6c63ff, #48cae4);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+        .stat-item p { font-size: 0.85rem; color: #666; margin-top: 4px; }
+
+        /* FEATURES */
+        .section {
+            padding: 100px 60px;
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+        .section-label {
+            font-size: 0.8rem;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            color: #6c63ff;
+            margin-bottom: 12px;
+        }
+        .section h2 {
+            font-size: clamp(1.8rem, 4vw, 2.8rem);
+            font-weight: 700;
+            margin-bottom: 16px;
+            letter-spacing: -0.5px;
+        }
+        .section > p {
+            color: #777;
+            font-size: 1rem;
+            margin-bottom: 60px;
+            max-width: 500px;
+            line-height: 1.7;
+        }
+        .features-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            gap: 24px;
+        }
+        .feature-card {
+            background: rgba(255,255,255,0.03);
+            border: 1px solid rgba(255,255,255,0.07);
+            border-radius: 16px;
+            padding: 32px;
+            transition: border-color 0.3s, transform 0.3s;
+        }
+        .feature-card:hover {
+            border-color: rgba(108,99,255,0.4);
+            transform: translateY(-4px);
+        }
+        .feature-icon {
+            font-size: 2rem;
+            margin-bottom: 20px;
+        }
+        .feature-card h3 {
+            font-size: 1.1rem;
+            font-weight: 600;
+            margin-bottom: 10px;
+        }
+        .feature-card p {
+            color: #666;
+            font-size: 0.9rem;
+            line-height: 1.7;
+        }
+
+        /* HOW IT WORKS */
+        .how-section {
+            background: rgba(255,255,255,0.02);
+            border-top: 1px solid rgba(255,255,255,0.06);
+            border-bottom: 1px solid rgba(255,255,255,0.06);
+        }
+        .steps {
+            display: flex;
+            gap: 0;
+            counter-reset: step;
+            flex-wrap: wrap;
+        }
+        .step {
+            flex: 1;
+            min-width: 200px;
+            padding: 32px;
+            position: relative;
+        }
+        .step:not(:last-child)::after {
+            content: '→';
+            position: absolute;
+            right: -12px;
+            top: 50%;
+            transform: translateY(-50%);
+            color: #333;
+            font-size: 1.4rem;
+        }
+        .step-num {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, #6c63ff, #48cae4);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 700;
+            font-size: 0.9rem;
+            margin-bottom: 20px;
+        }
+        .step h3 { font-size: 1rem; font-weight: 600; margin-bottom: 8px; }
+        .step p { color: #666; font-size: 0.85rem; line-height: 1.6; }
+
+        /* API PREVIEW */
+        .api-section { padding: 100px 60px; max-width: 1200px; margin: 0 auto; }
+        .api-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 24px;
+        }
+        .api-card {
+            background: rgba(255,255,255,0.03);
+            border: 1px solid rgba(255,255,255,0.07);
+            border-radius: 16px;
+            overflow: hidden;
+        }
+        .api-card-header {
+            padding: 16px 24px;
+            border-bottom: 1px solid rgba(255,255,255,0.07);
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+        .method {
+            padding: 3px 10px;
+            border-radius: 6px;
+            font-size: 0.75rem;
+            font-weight: 700;
+        }
+        .method.post { background: rgba(108,99,255,0.2); color: #6c63ff; }
+        .method.get { background: rgba(72,202,228,0.2); color: #48cae4; }
+        .api-path { font-size: 0.85rem; color: #aaa; font-family: monospace; }
+        .api-card pre {
+            padding: 20px 24px;
+            font-size: 0.8rem;
+            color: #888;
+            font-family: 'Courier New', monospace;
+            line-height: 1.7;
+            overflow-x: auto;
+        }
+        .api-card pre .key { color: #6c63ff; }
+        .api-card pre .val { color: #48cae4; }
+        .api-card pre .str { color: #a8ff78; }
+
+        /* CTA */
+        .cta {
+            text-align: center;
+            padding: 120px 20px;
+            position: relative;
+        }
+        .cta::before {
+            content: '';
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            width: 600px;
+            height: 400px;
+            background: radial-gradient(ellipse, rgba(72,202,228,0.08) 0%, transparent 70%);
+            pointer-events: none;
+        }
+        .cta h2 {
+            font-size: clamp(2rem, 5vw, 3.5rem);
+            font-weight: 800;
+            margin-bottom: 20px;
+            letter-spacing: -1px;
+        }
+        .cta p { color: #777; font-size: 1rem; margin-bottom: 44px; }
+
+        /* FOOTER */
+        footer {
+            border-top: 1px solid rgba(255,255,255,0.06);
+            padding: 40px 60px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            color: #444;
+            font-size: 0.85rem;
+            flex-wrap: wrap;
+            gap: 16px;
+        }
+
+        @media (max-width: 768px) {
+            nav { padding: 16px 24px; }
+            .nav-links { display: none; }
+            .section { padding: 60px 24px; }
+            .api-section { padding: 60px 24px; }
+            .api-grid { grid-template-columns: 1fr; }
+            .stats { gap: 32px; }
+            footer { padding: 32px 24px; }
+            .step:not(:last-child)::after { display: none; }
+        }
+    </style>
+</head>
+<body>
+
+<!-- NAV -->
+<nav>
+    <div class="nav-logo">✦ AI Ultrasound</div>
+    <div class="nav-links">
+        <a href="#features">기능</a>
+        <a href="#how">사용방법</a>
+        <a href="#api">API</a>
+        <a href="/api/auth/signup" class="btn-nav">시작하기 →</a>
+    </div>
+</nav>
+
+<!-- HERO -->
+<section class="hero">
+    <div class="hero-badge">✦ AI 기반 초음파 분석 서비스</div>
+    <h1>초음파 이미지로<br><span>태아 성별을 예측</span>합니다</h1>
+    <p>최신 AI 기술을 활용해 초음파 이미지를 분석하고, 빠르고 정확하게 예측 결과를 제공합니다.</p>
+    <div class="hero-btns">
+        <a href="#how" class="btn-primary">서비스 알아보기</a>
+        <a href="#api" class="btn-secondary">API 문서 보기</a>
+    </div>
+</section>
+
+<!-- STATS -->
+<div class="stats">
+    <div class="stat-item">
+        <div class="num">99%</div>
+        <p>최대 신뢰도</p>
+    </div>
+    <div class="stat-item">
+        <div class="num">&lt; 5s</div>
+        <p>평균 분석 시간</p>
+    </div>
+    <div class="stat-item">
+        <div class="num">REST</div>
+        <p>표준 API 지원</p>
+    </div>
+    <div class="stat-item">
+        <div class="num">24/7</div>
+        <p>서비스 운영</p>
+    </div>
+</div>
+
+<!-- FEATURES -->
+<section class="section" id="features">
+    <div class="section-label">Features</div>
+    <h2>왜 이 서비스인가요?</h2>
+    <p>간단한 API 호출만으로 초음파 이미지 분석 결과를 바로 받아볼 수 있습니다.</p>
+    <div class="features-grid">
+        <div class="feature-card">
+            <div class="feature-icon">⚡</div>
+            <h3>빠른 분석</h3>
+            <p>Java 21 Virtual Thread 기반으로 비동기 처리되어 응답 속도가 빠릅니다.</p>
+        </div>
+        <div class="feature-card">
+            <div class="feature-icon">🔒</div>
+            <h3>보안 인증</h3>
+            <p>회원가입 및 로그인을 통해 본인의 분석 결과만 안전하게 조회할 수 있습니다.</p>
+        </div>
+        <div class="feature-card">
+            <div class="feature-icon">📊</div>
+            <h3>결과 이력 관리</h3>
+            <p>분석한 모든 이미지의 예측 결과와 신뢰도를 언제든지 다시 확인할 수 있습니다.</p>
+        </div>
+        <div class="feature-card">
+            <div class="feature-icon">🔌</div>
+            <h3>REST API</h3>
+            <p>표준 REST API를 제공하여 어떤 플랫폼에서도 쉽게 연동할 수 있습니다.</p>
+        </div>
+        <div class="feature-card">
+            <div class="feature-icon">☁️</div>
+            <h3>클라우드 운영</h3>
+            <p>안정적인 서버 환경에서 24시간 운영되며 언제든지 접근 가능합니다.</p>
+        </div>
+        <div class="feature-card">
+            <div class="feature-icon">🖼️</div>
+            <h3>다양한 이미지 형식</h3>
+            <p>JPEG, PNG 등 일반적인 이미지 포맷을 모두 지원합니다. 최대 10MB.</p>
+        </div>
+    </div>
+</section>
+
+<!-- HOW IT WORKS -->
+<div class="how-section">
+    <section class="section" id="how">
+        <div class="section-label">How it works</div>
+        <h2>사용 방법</h2>
+        <p>4단계만 거치면 분석 결과를 받을 수 있습니다.</p>
+        <div class="steps">
+            <div class="step">
+                <div class="step-num">1</div>
+                <h3>회원가입</h3>
+                <p>이메일과 비밀번호로 계정을 생성합니다.</p>
+            </div>
+            <div class="step">
+                <div class="step-num">2</div>
+                <h3>로그인</h3>
+                <p>API 요청 시 Basic Auth 인증 정보를 포함합니다.</p>
+            </div>
+            <div class="step">
+                <div class="step-num">3</div>
+                <h3>이미지 업로드</h3>
+                <p>초음파 이미지를 multipart/form-data로 전송합니다.</p>
+            </div>
+            <div class="step">
+                <div class="step-num">4</div>
+                <h3>결과 확인</h3>
+                <p>예측 성별과 신뢰도를 JSON으로 즉시 받습니다.</p>
+            </div>
+        </div>
+    </section>
+</div>
+
+<!-- API -->
+<section class="api-section" id="api">
+    <div class="section-label">API Reference</div>
+    <h2 style="font-size: clamp(1.8rem, 4vw, 2.8rem); font-weight: 700; margin-bottom: 16px;">주요 API 엔드포인트</h2>
+    <p style="color: #777; margin-bottom: 48px;">Base URL: <code style="color:#6c63ff;">https://my-ai.kpearl.net</code></p>
+    <div class="api-grid">
+        <div class="api-card">
+            <div class="api-card-header">
+                <span class="method post">POST</span>
+                <span class="api-path">/api/auth/signup</span>
+            </div>
+            <pre>
+<span class="key"># Request Body (JSON)</span>
+{
+  <span class="key">"username"</span>: <span class="str">"hong"</span>,
+  <span class="key">"password"</span>: <span class="str">"password123"</span>,
+  <span class="key">"email"</span>: <span class="str">"hong@example.com"</span>
+}
+
+<span class="key"># Response 201</span>
+{
+  <span class="key">"message"</span>: <span class="str">"User registered successfully"</span>,
+  <span class="key">"username"</span>: <span class="str">"hong"</span>
+}</pre>
+        </div>
+        <div class="api-card">
+            <div class="api-card-header">
+                <span class="method post">POST</span>
+                <span class="api-path">/api/predictions/analyze</span>
+            </div>
+            <pre>
+<span class="key"># Request (multipart/form-data)</span>
+<span class="key">Authorization</span>: Basic {base64}
+<span class="key">file</span>: &lt;image file&gt;
+
+<span class="key"># Response 200</span>
+{
+  <span class="key">"predictedGender"</span>: <span class="str">"MALE"</span>,
+  <span class="key">"confidenceScore"</span>: <span class="val">0.9231</span>,
+  <span class="key">"analyzedAt"</span>: <span class="str">"2026-03-26T..."</span>
+}</pre>
+        </div>
+        <div class="api-card">
+            <div class="api-card-header">
+                <span class="method get">GET</span>
+                <span class="api-path">/api/predictions/my-results</span>
+            </div>
+            <pre>
+<span class="key"># Request Headers</span>
+<span class="key">Authorization</span>: Basic {base64}
+
+<span class="key"># Response 200</span>
+[
+  {
+    <span class="key">"predictionId"</span>: <span class="val">1</span>,
+    <span class="key">"originalFileName"</span>: <span class="str">"scan.jpg"</span>,
+    <span class="key">"predictedGender"</span>: <span class="str">"FEMALE"</span>,
+    <span class="key">"confidenceScore"</span>: <span class="val">0.8754</span>
+  }
+]</pre>
+        </div>
+        <div class="api-card">
+            <div class="api-card-header">
+                <span class="method get">GET</span>
+                <span class="api-path">/api/predictions/my-results</span>
+            </div>
+            <pre>
+<span class="key"># Basic Auth 생성 방법</span>
+<span class="key">username:password</span> → Base64 인코딩
+
+<span class="key"># curl 예시</span>
+curl -u hong:password123 \
+  -F <span class="str">"file=@scan.jpg"</span> \
+  https://my-ai.kpearl.net
+    /api/predictions/analyze</pre>
+        </div>
+    </div>
+</section>
+
+<!-- CTA -->
+<section class="cta">
+    <h2>지금 바로 시작해보세요</h2>
+    <p>회원가입 후 API를 통해 초음파 이미지 분석을 즉시 이용할 수 있습니다.</p>
+    <a href="/api/auth/signup" class="btn-primary">무료로 시작하기 →</a>
+</section>
+
+<!-- FOOTER -->
+<footer>
+    <div>© 2026 AI Ultrasound Service. All rights reserved.</div>
+    <div>Powered by Spring Boot 3.4 · Java 21 · MariaDB</div>
+</footer>
+
+</body>
+</html>
