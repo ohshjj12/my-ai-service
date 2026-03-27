@@ -1,0 +1,22 @@
+# ============================================================
+# docker-compose.prod.yml — 프로덕션 환경
+# 실행: docker compose -f docker/docker-compose.base.yml -f docker/docker-compose.prod.yml --env-file docker/.env.prod up -d
+# ============================================================
+version: "3.9"
+
+services:
+  db:
+    container_name: aiservice-db
+    restart: always
+    volumes:
+      - db-data:/var/lib/mysql
+    # 프로덕션에서는 DB 포트 외부 노출 금지 (app만 내부 접근)
+
+  app:
+    container_name: aiservice-app
+    restart: always
+    ports:
+      - "8090:8090"
+
+volumes:
+  db-data:

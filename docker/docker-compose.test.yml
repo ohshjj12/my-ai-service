@@ -1,0 +1,19 @@
+# ============================================================
+# docker-compose.test.yml — 테스트 환경 (CI / 통합 테스트)
+# 실행: docker compose -f docker/docker-compose.base.yml -f docker/docker-compose.test.yml --env-file docker/.env.test up -d
+# 종료 후 볼륨 자동 삭제: ... down -v
+# ============================================================
+version: "3.9"
+
+services:
+  db:
+    container_name: aiservice-db-test
+    ports:
+      - "33061:3306"    # dev(33060)와 포트 충돌 방지
+    tmpfs:
+      - /var/lib/mysql  # 매 실행마다 DB 초기화 (테스트 격리)
+
+  app:
+    container_name: aiservice-app-test
+    ports:
+      - "8091:8090"     # dev(8090)와 포트 충돌 방지
