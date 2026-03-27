@@ -11,6 +11,7 @@ import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 import org.springframework.web.multipart.MaxUploadSizeExceededException;
+import org.springframework.web.HttpRequestMethodNotSupportedException;
 
 import java.util.stream.Collectors;
 
@@ -48,6 +49,12 @@ public class GlobalExceptionHandler {
     public ResponseEntity<ApiResponse<Void>> handleMaxUploadSize(MaxUploadSizeExceededException e) {
         return ResponseEntity.status(HttpStatus.PAYLOAD_TOO_LARGE)
                 .body(ApiResponse.error("파일 크기가 허용 용량(10MB)을 초과했습니다."));
+    }
+
+    @ExceptionHandler(HttpRequestMethodNotSupportedException.class)
+    public ResponseEntity<ApiResponse<Void>> handleMethodNotSupported(HttpRequestMethodNotSupportedException e) {
+        return ResponseEntity.status(HttpStatus.METHOD_NOT_ALLOWED)
+                .body(ApiResponse.error("지원하지 않는 HTTP 메서드입니다. [" + e.getMethod() + "] → 허용: " + e.getSupportedHttpMethods()));
     }
 
     @ExceptionHandler(Exception.class)

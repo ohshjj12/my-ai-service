@@ -1,0 +1,762 @@
+<!DOCTYPE html>
+<html lang="ko" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI 초음파 분석 - 서비스</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: 'Segoe UI', 'Apple SD Gothic Neo', sans-serif;
+            background: #0a0a0f;
+            color: #e0e0e0;
+            min-height: 100vh;
+        }
+
+        /* NAV */
+        nav {
+            position: fixed; top: 0; left: 0; right: 0; z-index: 100;
+            display: flex; justify-content: space-between; align-items: center;
+            padding: 16px 40px;
+            background: rgba(10,10,15,0.9);
+            backdrop-filter: blur(12px);
+            border-bottom: 1px solid rgba(255,255,255,0.07);
+        }
+        .nav-logo {
+            font-size: 1.2rem; font-weight: 700;
+            background: linear-gradient(135deg, #6c63ff, #48cae4);
+            -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+            text-decoration: none;
+        }
+        .nav-right { display: flex; align-items: center; gap: 20px; }
+        .nav-user { font-size: 0.85rem; color: #888; }
+        .nav-user span { color: #6c63ff; font-weight: 600; }
+        #btn-logout {
+            padding: 7px 18px; border-radius: 8px;
+            background: transparent; border: 1px solid rgba(255,255,255,0.15);
+            color: #aaa; font-size: 0.85rem; cursor: pointer;
+            transition: border-color 0.2s, color 0.2s;
+        }
+        #btn-logout:hover { border-color: #ff6b6b; color: #ff6b6b; }
+
+        /* LAYOUT */
+        .app-container {
+            max-width: 960px; margin: 0 auto;
+            padding: 96px 24px 60px;
+        }
+
+        /* AUTH PANEL */
+        #auth-panel {
+            max-width: 420px; margin: 60px auto 0;
+        }
+        .auth-tabs {
+            display: flex; gap: 0; margin-bottom: 28px;
+            border-bottom: 1px solid rgba(255,255,255,0.1);
+        }
+        .auth-tab {
+            padding: 12px 28px; background: none; border: none;
+            color: #666; font-size: 1rem; cursor: pointer;
+            border-bottom: 2px solid transparent; margin-bottom: -1px;
+            transition: color 0.2s, border-color 0.2s;
+        }
+        .auth-tab.active { color: #fff; border-bottom-color: #6c63ff; }
+
+        .auth-form { display: flex; flex-direction: column; gap: 14px; }
+        .auth-form.hidden { display: none; }
+
+        .field-group { display: flex; flex-direction: column; gap: 6px; }
+        .field-group label { font-size: 0.82rem; color: #888; }
+        .field-group input {
+            padding: 11px 16px; border-radius: 10px;
+            background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1);
+            color: #e0e0e0; font-size: 0.95rem; outline: none;
+            transition: border-color 0.2s;
+        }
+        .field-group input:focus { border-color: #6c63ff; }
+
+        .btn-submit {
+            padding: 12px; border-radius: 10px;
+            background: linear-gradient(135deg, #6c63ff, #48cae4);
+            border: none; color: #fff; font-size: 1rem; font-weight: 600;
+            cursor: pointer; margin-top: 4px;
+            transition: opacity 0.2s, transform 0.2s;
+        }
+        .btn-submit:hover { opacity: 0.88; transform: translateY(-1px); }
+        .btn-submit:disabled { opacity: 0.5; cursor: not-allowed; transform: none; }
+
+        .auth-msg {
+            font-size: 0.85rem; text-align: center; margin-top: 4px;
+            min-height: 20px;
+        }
+        .auth-msg.error { color: #ff6b6b; }
+        .auth-msg.success { color: #48cae4; }
+
+        /* MAIN APP */
+        #main-panel { display: none; }
+        #main-panel.visible { display: block; }
+
+        .page-title {
+            font-size: 1.6rem; font-weight: 700;
+            margin-bottom: 6px; letter-spacing: -0.5px;
+        }
+        .page-sub { color: #666; font-size: 0.9rem; margin-bottom: 40px; }
+
+        /* UPLOAD CARD */
+        .card {
+            background: rgba(255,255,255,0.03);
+            border: 1px solid rgba(255,255,255,0.08);
+            border-radius: 16px; padding: 32px;
+            margin-bottom: 28px;
+        }
+        .card-title {
+            font-size: 1rem; font-weight: 600; margin-bottom: 20px;
+            display: flex; align-items: center; gap: 8px;
+        }
+        .card-title .icon { font-size: 1.2rem; }
+
+        /* DROPZONE */
+        #dropzone {
+            border: 2px dashed rgba(108,99,255,0.35);
+            border-radius: 12px; padding: 48px 24px;
+            text-align: center; cursor: pointer;
+            transition: border-color 0.2s, background 0.2s;
+            position: relative;
+        }
+        #dropzone:hover, #dropzone.dragover {
+            border-color: #6c63ff;
+            background: rgba(108,99,255,0.06);
+        }
+        #dropzone input[type="file"] {
+            position: absolute; inset: 0; opacity: 0; cursor: pointer;
+        }
+        .dropzone-icon { font-size: 2.4rem; margin-bottom: 12px; }
+        .dropzone-text { color: #888; font-size: 0.9rem; line-height: 1.6; }
+        .dropzone-text strong { color: #ccc; }
+        #file-preview {
+            margin-top: 18px; display: none;
+            align-items: center; gap: 14px;
+            padding: 12px 16px; border-radius: 10px;
+            background: rgba(108,99,255,0.1); border: 1px solid rgba(108,99,255,0.25);
+        }
+        #file-preview img {
+            width: 56px; height: 56px; object-fit: cover; border-radius: 8px;
+        }
+        #file-preview .file-info .name { font-size: 0.9rem; font-weight: 500; }
+        #file-preview .file-info .size { font-size: 0.78rem; color: #888; margin-top: 2px; }
+        #btn-remove-file {
+            margin-left: auto; background: none; border: none;
+            color: #666; cursor: pointer; font-size: 1.1rem;
+            transition: color 0.2s;
+        }
+        #btn-remove-file:hover { color: #ff6b6b; }
+
+        /* OPTION ROW */
+        .option-row {
+            display: flex; gap: 16px; margin-top: 20px; flex-wrap: wrap;
+        }
+        .option-row .field-group { flex: 1; min-width: 140px; }
+
+        /* ANALYZE BTN */
+        #btn-analyze {
+            width: 100%; margin-top: 20px;
+            padding: 13px; border-radius: 10px;
+            background: linear-gradient(135deg, #6c63ff, #48cae4);
+            border: none; color: #fff; font-size: 1rem; font-weight: 600;
+            cursor: pointer; transition: opacity 0.2s, transform 0.2s;
+        }
+        #btn-analyze:hover { opacity: 0.88; transform: translateY(-1px); }
+        #btn-analyze:disabled { opacity: 0.4; cursor: not-allowed; transform: none; }
+
+        /* PROGRESS */
+        #analysis-progress { display: none; margin-top: 20px; }
+        .progress-bar-wrap {
+            background: rgba(255,255,255,0.06); border-radius: 999px;
+            height: 6px; overflow: hidden; margin-bottom: 10px;
+        }
+        .progress-bar {
+            height: 100%;
+            background: linear-gradient(90deg, #6c63ff, #48cae4);
+            border-radius: 999px;
+            animation: progressAnim 2s ease-in-out infinite;
+        }
+        @keyframes progressAnim {
+            0% { width: 20%; margin-left: 0; }
+            50% { width: 40%; margin-left: 30%; }
+            100% { width: 20%; margin-left: 80%; }
+        }
+        .progress-label { font-size: 0.82rem; color: #888; text-align: center; }
+
+        /* RESULT CARD */
+        #result-card { display: none; }
+        #result-card.visible { display: block; }
+        .result-grid {
+            display: grid; grid-template-columns: 1fr 1fr; gap: 16px;
+        }
+        .result-item {
+            background: rgba(255,255,255,0.03);
+            border: 1px solid rgba(255,255,255,0.07);
+            border-radius: 12px; padding: 20px 24px;
+            text-align: center;
+        }
+        .result-item .label { font-size: 0.78rem; color: #666; margin-bottom: 8px; }
+        .result-item .value {
+            font-size: 1.8rem; font-weight: 800;
+            background: linear-gradient(135deg, #6c63ff, #48cae4);
+            -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+        }
+        .result-item .value.female {
+            background: linear-gradient(135deg, #ff6b9d, #ff8fab);
+            -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+        }
+        .result-status-badge {
+            display: inline-flex; align-items: center; gap: 6px;
+            padding: 5px 14px; border-radius: 999px;
+            font-size: 0.8rem; font-weight: 600;
+        }
+        .badge-pending { background: rgba(255,165,0,0.15); color: #ffa500; }
+        .badge-done { background: rgba(72,202,228,0.15); color: #48cae4; }
+        .badge-error { background: rgba(255,107,107,0.15); color: #ff6b6b; }
+
+        /* HISTORY */
+        .history-table { width: 100%; border-collapse: collapse; }
+        .history-table th {
+            text-align: left; font-size: 0.78rem; color: #555;
+            padding: 8px 12px; border-bottom: 1px solid rgba(255,255,255,0.06);
+            font-weight: 500; text-transform: uppercase; letter-spacing: 0.5px;
+        }
+        .history-table td {
+            padding: 12px 12px; font-size: 0.88rem;
+            border-bottom: 1px solid rgba(255,255,255,0.04);
+        }
+        .history-table tr:last-child td { border-bottom: none; }
+        .history-table tr:hover td { background: rgba(255,255,255,0.02); }
+        .gender-male { color: #6c63ff; font-weight: 600; }
+        .gender-female { color: #ff8fab; font-weight: 600; }
+        .gender-unknown { color: #888; }
+        .empty-state { text-align: center; padding: 40px; color: #555; font-size: 0.9rem; }
+
+        #btn-refresh-history {
+            padding: 7px 16px; border-radius: 8px;
+            background: transparent; border: 1px solid rgba(255,255,255,0.1);
+            color: #888; font-size: 0.82rem; cursor: pointer;
+            transition: border-color 0.2s, color 0.2s;
+        }
+        #btn-refresh-history:hover { border-color: #6c63ff; color: #6c63ff; }
+
+        .card-title-row {
+            display: flex; justify-content: space-between;
+            align-items: center; margin-bottom: 20px;
+        }
+
+        /* TOAST */
+        #toast {
+            position: fixed; bottom: 32px; left: 50%; transform: translateX(-50%) translateY(80px);
+            padding: 12px 24px; border-radius: 10px;
+            background: rgba(30,30,40,0.95); border: 1px solid rgba(255,255,255,0.1);
+            font-size: 0.88rem; color: #e0e0e0;
+            transition: transform 0.3s ease; z-index: 999;
+            backdrop-filter: blur(8px);
+        }
+        #toast.show { transform: translateX(-50%) translateY(0); }
+        #toast.toast-error { border-color: rgba(255,107,107,0.4); color: #ff6b6b; }
+        #toast.toast-success { border-color: rgba(72,202,228,0.4); color: #48cae4; }
+
+        @media (max-width: 600px) {
+            nav { padding: 14px 20px; }
+            .app-container { padding: 80px 16px 40px; }
+            .card { padding: 20px; }
+            .result-grid { grid-template-columns: 1fr; }
+            .option-row { flex-direction: column; }
+        }
+    </style>
+</head>
+<body>
+
+<nav>
+    <a href="/" class="nav-logo">✦ AI Ultrasound</a>
+    <div class="nav-right">
+        <div class="nav-user" id="nav-username" style="display:none">
+            안녕하세요, <span id="username-display"></span>님
+        </div>
+        <button id="btn-logout" style="display:none">로그아웃</button>
+    </div>
+</nav>
+
+<div class="app-container">
+
+    <!-- ===== AUTH PANEL ===== -->
+    <div id="auth-panel">
+        <div class="auth-tabs">
+            <button class="auth-tab active" id="tab-login" onclick="switchTab('login')">로그인</button>
+            <button class="auth-tab" id="tab-signup" onclick="switchTab('signup')">회원가입</button>
+        </div>
+
+        <!-- LOGIN FORM -->
+        <div class="auth-form" id="form-login">
+            <div class="field-group">
+                <label>아이디</label>
+                <input type="text" id="login-username" placeholder="아이디 입력" autocomplete="username">
+            </div>
+            <div class="field-group">
+                <label>비밀번호</label>
+                <input type="password" id="login-password" placeholder="비밀번호 입력" autocomplete="current-password">
+            </div>
+            <button class="btn-submit" id="btn-login" onclick="doLogin()">로그인</button>
+            <div class="auth-msg" id="login-msg"></div>
+        </div>
+
+        <!-- SIGNUP FORM -->
+        <div class="auth-form hidden" id="form-signup">
+            <div class="field-group">
+                <label>아이디</label>
+                <input type="text" id="signup-username" placeholder="영문+숫자 4자 이상">
+            </div>
+            <div class="field-group">
+                <label>이메일</label>
+                <input type="email" id="signup-email" placeholder="example@email.com">
+            </div>
+            <div class="field-group">
+                <label>비밀번호</label>
+                <input type="password" id="signup-password" placeholder="8자 이상">
+            </div>
+            <button class="btn-submit" id="btn-signup" onclick="doSignup()">회원가입</button>
+            <div class="auth-msg" id="signup-msg"></div>
+        </div>
+    </div>
+
+    <!-- ===== MAIN APP PANEL ===== -->
+    <div id="main-panel">
+        <div class="page-title">초음파 이미지 분석</div>
+        <div class="page-sub">이미지를 업로드하면 AI가 태아 성별을 예측합니다.</div>
+
+        <!-- UPLOAD CARD -->
+        <div class="card">
+            <div class="card-title"><span class="icon">🖼️</span> 이미지 업로드</div>
+
+            <div id="dropzone">
+                <input type="file" id="file-input" accept="image/*" onchange="onFileSelected(this.files[0])">
+                <div class="dropzone-icon">📂</div>
+                <div class="dropzone-text">
+                    <strong>클릭하거나 파일을 드래그</strong>하세요<br>
+                    JPEG, PNG 지원 · 최대 10MB
+                </div>
+            </div>
+
+            <div id="file-preview">
+                <img id="preview-img" src="" alt="preview">
+                <div class="file-info">
+                    <div class="name" id="preview-name"></div>
+                    <div class="size" id="preview-size"></div>
+                </div>
+                <button id="btn-remove-file" onclick="removeFile()">✕</button>
+            </div>
+
+            <div class="option-row">
+                <div class="field-group">
+                    <label>임신 주차 (선택)</label>
+                    <input type="number" id="week-number" placeholder="예: 20" min="1" max="42">
+                </div>
+            </div>
+
+            <button id="btn-analyze" onclick="doAnalyze()" disabled>분석 시작</button>
+
+            <div id="analysis-progress">
+                <div class="progress-bar-wrap"><div class="progress-bar"></div></div>
+                <div class="progress-label" id="progress-label">분석 중...</div>
+            </div>
+        </div>
+
+        <!-- RESULT CARD -->
+        <div class="card" id="result-card">
+            <div class="card-title"><span class="icon">📊</span> 분석 결과</div>
+            <div class="result-grid">
+                <div class="result-item">
+                    <div class="label">예측 성별</div>
+                    <div class="value" id="result-gender">-</div>
+                </div>
+                <div class="result-item">
+                    <div class="label">신뢰도</div>
+                    <div class="value" id="result-confidence">-</div>
+                </div>
+                <div class="result-item">
+                    <div class="label">분석 상태</div>
+                    <div id="result-status-wrap"><span class="result-status-badge badge-pending">대기 중</span></div>
+                </div>
+                <div class="result-item">
+                    <div class="label">분석 시간</div>
+                    <div class="value" style="font-size:0.95rem" id="result-time">-</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- HISTORY CARD -->
+        <div class="card">
+            <div class="card-title-row">
+                <div class="card-title"><span class="icon">📋</span> 분석 이력</div>
+                <button id="btn-refresh-history" onclick="loadHistory()">↻ 새로고침</button>
+            </div>
+            <div id="history-wrap">
+                <div class="empty-state">분석 이력이 없습니다.</div>
+            </div>
+        </div>
+    </div>
+
+</div>
+
+<!-- TOAST -->
+<div id="toast"></div>
+
+<script>
+    const BASE = '';
+    let accessToken = localStorage.getItem('accessToken') || '';
+    let currentUsername = localStorage.getItem('username') || '';
+    let selectedFile = null;
+    let pollingTimer = null;
+
+    // ── 초기화 ──────────────────────────────────────────────
+    window.addEventListener('DOMContentLoaded', () => {
+        if (accessToken) showMainPanel();
+
+        // 드래그앤드롭
+        const dz = document.getElementById('dropzone');
+        dz.addEventListener('dragover', e => { e.preventDefault(); dz.classList.add('dragover'); });
+        dz.addEventListener('dragleave', () => dz.classList.remove('dragover'));
+        dz.addEventListener('drop', e => {
+            e.preventDefault(); dz.classList.remove('dragover');
+            const f = e.dataTransfer.files[0];
+            if (f) onFileSelected(f);
+        });
+
+        // 엔터키
+        document.getElementById('login-password').addEventListener('keydown', e => {
+            if (e.key === 'Enter') doLogin();
+        });
+        document.getElementById('signup-password').addEventListener('keydown', e => {
+            if (e.key === 'Enter') doSignup();
+        });
+    });
+
+    // ── 탭 전환 ─────────────────────────────────────────────
+    function switchTab(tab) {
+        document.getElementById('tab-login').classList.toggle('active', tab === 'login');
+        document.getElementById('tab-signup').classList.toggle('active', tab === 'signup');
+        document.getElementById('form-login').classList.toggle('hidden', tab !== 'login');
+        document.getElementById('form-signup').classList.toggle('hidden', tab !== 'signup');
+    }
+
+    // ── 로그인 ───────────────────────────────────────────────
+    async function doLogin() {
+        const username = document.getElementById('login-username').value.trim();
+        const password = document.getElementById('login-password').value;
+        const msg = document.getElementById('login-msg');
+        const btn = document.getElementById('btn-login');
+        if (!username || !password) { setMsg(msg, '아이디와 비밀번호를 입력하세요.', 'error'); return; }
+
+        btn.disabled = true; btn.textContent = '로그인 중...';
+        try {
+            const res = await fetch('/api/auth/login', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ username, password })
+            });
+            const data = await res.json();
+            if (res.ok && data.success) {
+                accessToken = data.data.accessToken;
+                currentUsername = data.data.username;
+                localStorage.setItem('accessToken', accessToken);
+                localStorage.setItem('username', currentUsername);
+                showMainPanel();
+                showToast('로그인 성공!', 'success');
+            } else {
+                setMsg(msg, data.message || '로그인 실패', 'error');
+            }
+        } catch (e) {
+            setMsg(msg, '서버 연결 오류', 'error');
+        } finally {
+            btn.disabled = false; btn.textContent = '로그인';
+        }
+    }
+
+    // ── 회원가입 ─────────────────────────────────────────────
+    async function doSignup() {
+        const username = document.getElementById('signup-username').value.trim();
+        const email = document.getElementById('signup-email').value.trim();
+        const password = document.getElementById('signup-password').value;
+        const msg = document.getElementById('signup-msg');
+        const btn = document.getElementById('btn-signup');
+        if (!username || !email || !password) { setMsg(msg, '모든 항목을 입력하세요.', 'error'); return; }
+
+        btn.disabled = true; btn.textContent = '처리 중...';
+        try {
+            const res = await fetch('/api/auth/signup', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ username, email, password })
+            });
+            const data = await res.json();
+            if (res.ok && data.success) {
+                setMsg(msg, '회원가입 완료! 로그인해주세요.', 'success');
+                setTimeout(() => switchTab('login'), 1200);
+            } else {
+                setMsg(msg, data.message || '회원가입 실패', 'error');
+            }
+        } catch (e) {
+            setMsg(msg, '서버 연결 오류', 'error');
+        } finally {
+            btn.disabled = false; btn.textContent = '회원가입';
+        }
+    }
+
+    // ── 로그아웃 ─────────────────────────────────────────────
+    document.getElementById('btn-logout').addEventListener('click', async () => {
+        try {
+            await fetch('/api/auth/logout', {
+                method: 'POST',
+                headers: { 'Authorization': 'Bearer ' + accessToken }
+            });
+        } catch(_) {}
+        accessToken = ''; currentUsername = '';
+        localStorage.removeItem('accessToken');
+        localStorage.removeItem('username');
+        showAuthPanel();
+        showToast('로그아웃 되었습니다.');
+    });
+
+    // ── 파일 선택 ────────────────────────────────────────────
+    function onFileSelected(file) {
+        if (!file) return;
+        if (!file.type.startsWith('image/')) { showToast('이미지 파일만 업로드 가능합니다.', 'error'); return; }
+        if (file.size > 10 * 1024 * 1024) { showToast('파일 크기는 10MB 이하여야 합니다.', 'error'); return; }
+
+        selectedFile = file;
+        const reader = new FileReader();
+        reader.onload = e => {
+            document.getElementById('preview-img').src = e.target.result;
+        };
+        reader.readAsDataURL(file);
+        document.getElementById('preview-name').textContent = file.name;
+        document.getElementById('preview-size').textContent = formatSize(file.size);
+        document.getElementById('file-preview').style.display = 'flex';
+        document.getElementById('btn-analyze').disabled = false;
+    }
+
+    function removeFile() {
+        selectedFile = null;
+        document.getElementById('file-input').value = '';
+        document.getElementById('file-preview').style.display = 'none';
+        document.getElementById('btn-analyze').disabled = true;
+    }
+
+    // ── 분석 요청 ────────────────────────────────────────────
+    async function doAnalyze() {
+        if (!selectedFile) return;
+        const weekNumber = document.getElementById('week-number').value;
+        const btn = document.getElementById('btn-analyze');
+        const progress = document.getElementById('analysis-progress');
+
+        btn.disabled = true;
+        progress.style.display = 'block';
+        document.getElementById('progress-label').textContent = '분석 요청 중...';
+        document.getElementById('result-card').classList.remove('visible');
+
+        const formData = new FormData();
+        formData.append('file', selectedFile);
+        if (weekNumber) formData.append('weekNumber', weekNumber);
+
+        try {
+            const res = await fetch('/api/predictions/analyze', {
+                method: 'POST',
+                headers: { 'Authorization': 'Bearer ' + accessToken },
+                body: formData
+            });
+
+            if (res.status === 401) { handleUnauthorized(); return; }
+
+            const data = await res.json();
+            if (res.ok && data.success) {
+                const predictionId = data.data.id || data.data.predictionId;
+                const status = data.data.status || data.data.analysisStatus;
+
+                // Redis 비활성화 시: 이미 분석 완료 상태로 응답됨
+                if (status === 'DONE' || status === 'COMPLETED' || status === 'FAILED') {
+                    showResult(data.data);
+                    document.getElementById('analysis-progress').style.display = 'none';
+                    document.getElementById('btn-analyze').disabled = false;
+                    loadHistory();
+                } else {
+                    document.getElementById('progress-label').textContent = 'AI 분석 중... (최대 30초 소요)';
+                    showToast('분석 요청 완료! 결과를 기다리는 중...', 'success');
+                    pollStatus(predictionId);
+                }
+            } else {
+                showToast(data.message || '분석 요청 실패', 'error');
+                progress.style.display = 'none';
+                btn.disabled = false;
+            }
+        } catch (e) {
+            showToast('서버 연결 오류', 'error');
+            progress.style.display = 'none';
+            btn.disabled = false;
+        }
+    }
+
+    // ── 상태 폴링 ────────────────────────────────────────────
+    function pollStatus(predictionId) {
+        let attempts = 0;
+        const maxAttempts = 60; // 최대 60초
+
+        clearInterval(pollingTimer);
+        pollingTimer = setInterval(async () => {
+            attempts++;
+            try {
+                const res = await fetch(`/api/predictions/${predictionId}/status`, {
+                    headers: { 'Authorization': 'Bearer ' + accessToken }
+                });
+                if (res.status === 401) { handleUnauthorized(); clearInterval(pollingTimer); return; }
+                const data = await res.json();
+                if (data.success) {
+                    const r = data.data;
+                    if (r.status === 'COMPLETED' || r.status === 'FAILED' || attempts >= maxAttempts) {
+                        clearInterval(pollingTimer);
+                        showResult(r);
+                        document.getElementById('analysis-progress').style.display = 'none';
+                        document.getElementById('btn-analyze').disabled = false;
+                        loadHistory();
+                    }
+                }
+            } catch(_) {}
+        }, 1000);
+    }
+
+    function showResult(r) {
+        const card = document.getElementById('result-card');
+        card.classList.add('visible');
+
+        const gender = r.predictedGender;
+        const genderEl = document.getElementById('result-gender');
+        if (gender === 'MALE') {
+            genderEl.textContent = '♂ 남아';
+            genderEl.className = 'value';
+        } else if (gender === 'FEMALE') {
+            genderEl.textContent = '♀ 여아';
+            genderEl.className = 'value female';
+        } else {
+            genderEl.textContent = '판별 불가';
+            genderEl.className = 'value';
+        }
+
+        const conf = r.confidenceScore;
+        document.getElementById('result-confidence').textContent =
+            conf != null ? (conf * 100).toFixed(1) + '%' : '-';
+
+        const statusWrap = document.getElementById('result-status-wrap');
+        const status = r.analysisStatus || r.status;
+        const statusMap = {
+            DONE: '<span class="result-status-badge badge-done">✓ 완료</span>',
+            COMPLETED: '<span class="result-status-badge badge-done">✓ 완료</span>',
+            FAILED: '<span class="result-status-badge badge-error">✗ 실패</span>',
+            PENDING: '<span class="result-status-badge badge-pending">● 대기 중</span>',
+            PROCESSING: '<span class="result-status-badge badge-pending">⟳ 처리 중</span>',
+        };
+        statusWrap.innerHTML = statusMap[status] || `<span class="result-status-badge badge-pending">${status}</span>`;
+
+        const analyzedAt = r.analyzedAt ? new Date(r.analyzedAt).toLocaleString('ko-KR') : '-';
+        document.getElementById('result-time').textContent = analyzedAt;
+
+        if (status === 'DONE' || status === 'COMPLETED') showToast('분석 완료!', 'success');
+        else if (status === 'FAILED') showToast('분석에 실패했습니다.', 'error');
+    }
+
+    // ── 이력 조회 ────────────────────────────────────────────
+    async function loadHistory() {
+        try {
+            const res = await fetch('/api/predictions/my-results', {
+                headers: { 'Authorization': 'Bearer ' + accessToken }
+            });
+            if (res.status === 401) { handleUnauthorized(); return; }
+            const data = await res.json();
+            renderHistory(data.success ? data.data : []);
+        } catch(_) {
+            renderHistory([]);
+        }
+    }
+
+    function renderHistory(list) {
+        const wrap = document.getElementById('history-wrap');
+        if (!list || list.length === 0) {
+            wrap.innerHTML = '<div class="empty-state">분석 이력이 없습니다.</div>';
+            return;
+        }
+        const rows = list.map(r => {
+            const gender = r.predictedGender === 'MALE' ? '<span class="gender-male">♂ 남아</span>'
+                : r.predictedGender === 'FEMALE' ? '<span class="gender-female">♀ 여아</span>'
+                : '<span class="gender-unknown">-</span>';
+            const conf = r.confidenceScore != null ? (r.confidenceScore * 100).toFixed(1) + '%' : '-';
+            const date = r.analyzedAt ? new Date(r.analyzedAt).toLocaleString('ko-KR') : '-';
+            const statusMap = { DONE: '✓ 완료', COMPLETED: '✓ 완료', FAILED: '✗ 실패', PENDING: '대기', PROCESSING: '처리 중' };
+            const status = r.analysisStatus || r.status;
+            return `<tr>
+                <td>${r.id}</td>
+                <td style="max-width:160px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${r.originalFileName || '-'}</td>
+                <td>${gender}</td>
+                <td>${conf}</td>
+                <td>${statusMap[status] || status}</td>
+                <td style="color:#555">${date}</td>
+            </tr>`;
+        }).join('');
+        wrap.innerHTML = `<table class="history-table">
+            <thead><tr>
+                <th>#</th><th>파일명</th><th>예측 성별</th><th>신뢰도</th><th>상태</th><th>분석일시</th>
+            </tr></thead>
+            <tbody>${rows}</tbody>
+        </table>`;
+    }
+
+    // ── UI 전환 ──────────────────────────────────────────────
+    function showMainPanel() {
+        document.getElementById('auth-panel').style.display = 'none';
+        document.getElementById('main-panel').classList.add('visible');
+        document.getElementById('nav-username').style.display = 'flex';
+        document.getElementById('username-display').textContent = currentUsername;
+        document.getElementById('btn-logout').style.display = 'block';
+        loadHistory();
+    }
+
+    function showAuthPanel() {
+        document.getElementById('auth-panel').style.display = 'block';
+        document.getElementById('main-panel').classList.remove('visible');
+        document.getElementById('nav-username').style.display = 'none';
+        document.getElementById('btn-logout').style.display = 'none';
+    }
+
+    function handleUnauthorized() {
+        accessToken = ''; currentUsername = '';
+        localStorage.removeItem('accessToken');
+        localStorage.removeItem('username');
+        showAuthPanel();
+        showToast('세션이 만료되었습니다. 다시 로그인해주세요.', 'error');
+    }
+
+    // ── 유틸 ─────────────────────────────────────────────────
+    function setMsg(el, text, type) {
+        el.textContent = text;
+        el.className = 'auth-msg ' + (type || '');
+    }
+
+    function formatSize(bytes) {
+        if (bytes < 1024) return bytes + ' B';
+        if (bytes < 1024 * 1024) return (bytes / 1024).toFixed(1) + ' KB';
+        return (bytes / 1024 / 1024).toFixed(1) + ' MB';
+    }
+
+    let toastTimer;
+    function showToast(msg, type) {
+        const el = document.getElementById('toast');
+        el.textContent = msg;
+        el.className = 'show' + (type ? ' toast-' + type : '');
+        clearTimeout(toastTimer);
+        toastTimer = setTimeout(() => el.className = '', 3000);
+    }
+</script>
+</body>
+</html>

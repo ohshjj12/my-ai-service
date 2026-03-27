@@ -82,11 +82,17 @@ public class PredictionService {
         pendingResult.setReportText("분석을 기다리는 중입니다...");
         PredictionResult saved = predictionResultRepository.save(pendingResult);
 
-        // 분석 큐에 추가 (워커가 처리)
-        analysisQueueService.enqueue(saved.getId());
-        log.info("분석 큐 등록: predictionId={}, file={}", saved.getId(), file.getOriginalFilename());
+        // Redis 활성화 시: 큐에 등록 후 워커가 처리
+        // Redis 비활성화 시: 즉시 직접 분석 수행
+        if (analysisQueueService.isEnabled()) {
+            analysisQueueService.enqueue(saved.getId());
+            log.info("분석 큐 등록: predictionId={}, file={}", saved.getId(), file.getOriginalFilename());
+        } else {
+            log.info("Redis 비활성화 - 즉시 분석 수행: predictionId={}, file={}", saved.getId(), file.getOriginalFilename());
+            performAnalysis(saved.getId());
+        }
 
-        return mapToResponse(saved);
+        return mapToResponse(predictionResultRepository.findById(saved.getId()).orElse(saved));
     }
 
     /**
