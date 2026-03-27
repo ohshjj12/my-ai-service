@@ -1,4 +1,4 @@
-﻿package com.example.aiservice.client;
+package com.example.aiservice.client;
 
 import com.example.aiservice.client.dto.AiAnalysisResult;
 import com.example.aiservice.entity.ApiUsageLog;
@@ -56,7 +56,7 @@ public class OpenAiVisionClient {
     public AiAnalysisResult analyzeUltrasound(byte[] imageBytes, String contentType,
                                                Long predictionResultId) {
         if (!isApiKeyConfigured()) {
-            log.warn("OPENAI_API_KEY 미설정 → 시뮬레이션 모드로 동작합니다.");
+            log.warn("OPENAI_API_KEY 미설정 -> 시뮬레이션 모드로 동작합니다.");
             return simulateFallback();
         }
 
@@ -99,7 +99,7 @@ public class OpenAiVisionClient {
         }
     }
 
-    /** 하위 호환 — predictionResultId 없이 호출 가능 */
+    /** 하위 호환 - predictionResultId 없이 호출 가능 */
     public AiAnalysisResult analyzeUltrasound(byte[] imageBytes, String contentType) {
         return analyzeUltrasound(imageBytes, contentType, null);
     }
@@ -117,7 +117,7 @@ public class OpenAiVisionClient {
                 .path("message").path("content").asText();
         log.debug("OpenAI 응답 content: {}", content);
 
-        // === 비용 로깅 ===
+        // 비용 로깅
         JsonNode usage = root.path("usage");
         if (!usage.isMissingNode()) {
             int promptTokens     = usage.path("prompt_tokens").asInt(0);
@@ -161,12 +161,12 @@ public class OpenAiVisionClient {
         double confidence = Math.round((0.65 + rand.nextDouble() * 0.30) * 100.0) / 100.0;
         String gender = isMale ? "MALE" : "FEMALE";
         String report = isMale
-                ? String.format("초음파 이미지 분석 결과, 남아일 가능성이 %.0f%%로 예측됩니다. " +
-                  "생식기 부위의 특징적인 형태가 관찰되었습니다. " +
-                  "건강한 아기의 탄생을 기원드립니다! 🎉 (시뮬레이션 결과)", confidence * 100)
-                : String.format("초음파 이미지 분석 결과, 여아일 가능성이 %.0f%%로 예측됩니다. " +
-                  "생식기 부위의 3개의 선(three lines sign)이 관찰되었습니다. " +
-                  "건강하고 예쁜 아기의 탄생을 기원드립니다! 🎀 (시뮬레이션 결과)", confidence * 100);
+                ? String.format("초음파 이미지 분석 결과, 남아일 가능성이 %.0f%%로 예측됩니다. "
+                  + "생식기 부위의 특징적인 형태가 관찰되었습니다. "
+                  + "건강한 아기의 탄생을 기원드립니다! (시뮬레이션 결과)", confidence * 100)
+                : String.format("초음파 이미지 분석 결과, 여아일 가능성이 %.0f%%로 예측됩니다. "
+                  + "생식기 부위의 3개의 선(three lines sign)이 관찰되었습니다. "
+                  + "건강하고 예쁜 아기의 탄생을 기원드립니다! (시뮬레이션 결과)", confidence * 100);
         return new AiAnalysisResult(gender, confidence, report);
     }
 }
