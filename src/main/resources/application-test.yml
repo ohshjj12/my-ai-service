@@ -1,0 +1,17 @@
+spring:
+  datasource:
+    url: jdbc:mariadb://127.0.0.1:33061/aiservice?useUnicode=true&characterEncoding=UTF-8&serverTimezone=Asia/Seoul
+    username: aiservice
+    password: ${DB_PASSWORD:test_password}
+  jpa:
+    show-sql: false
+    hibernate:
+      ddl-auto: create-drop  # 테스트마다 스키마 재생성
+
+upload:
+  path: ./uploads-test
+
+logging:
+  level:
+    com.example.aiservice: INFO
+    org.springframework.security: WARN

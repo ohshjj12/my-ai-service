@@ -28,3 +28,19 @@ build/
 out/
 
 .vscode/sftp.json
+
+# Spring Boot 환경별 설정 (프로덕션 설정 노출 방지)
+application-prod.yml
+application-prod.yaml
+.env
+
+# Docker 환경변수 (프로덕션 실제값 노출 방지)
+docker/.env.prod
+
+# 업로드된 파일
+uploads/
+uploads-test/
+
+# k8s Secret 파일 (민감정보)
+k8s/*secret*.yml
+k8s/*secret*.yaml

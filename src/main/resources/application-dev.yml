@@ -1,0 +1,25 @@
+spring:
+  datasource:
+    url: jdbc:mariadb://127.0.0.1:33060/aiservice?useUnicode=true&characterEncoding=UTF-8&serverTimezone=Asia/Seoul
+    username: aiservice
+    password: ${DB_PASSWORD:!1dpdldkdltjqltm1!}
+  jpa:
+    show-sql: true
+    hibernate:
+      ddl-auto: update
+
+upload:
+  path: ./uploads
+# dev에서는 actuator 상세 정보 활성화
+management:
+  endpoint:
+    health:
+      show-details: always
+  endpoints:
+    web:
+      exposure:
+        include: health,info,env,beans,mappings
+logging:
+  level:
+    com.example.aiservice: DEBUG
+    org.springframework.security: DEBUG
