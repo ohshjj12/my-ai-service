@@ -2,7 +2,9 @@ package com.example.aiservice.service;
 
 import com.example.aiservice.dto.SignupRequest;
 import com.example.aiservice.entity.User;
+import com.example.aiservice.repository.RefreshTokenRepository;
 import com.example.aiservice.repository.UserRepository;
+import com.example.aiservice.security.JwtTokenProvider;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -22,11 +24,10 @@ import static org.mockito.Mockito.*;
 @ExtendWith(MockitoExtension.class)
 class UserServiceTest {
 
-    @Mock
-    private UserRepository userRepository;
-
-    @Mock
-    private PasswordEncoder passwordEncoder;
+    @Mock private UserRepository userRepository;
+    @Mock private PasswordEncoder passwordEncoder;
+    @Mock private RefreshTokenRepository refreshTokenRepository;
+    @Mock private JwtTokenProvider jwtTokenProvider;
 
     @InjectMocks
     private UserService userService;
@@ -97,5 +98,11 @@ class UserServiceTest {
 
         assertThatThrownBy(() -> userService.loadUserByUsername("unknown"))
                 .isInstanceOf(UsernameNotFoundException.class);
+    }
+
+    @Test
+    void logout_deletesRefreshToken() {
+        userService.logout("alice");
+        verify(refreshTokenRepository).deleteByUsername("alice");
     }
 }
