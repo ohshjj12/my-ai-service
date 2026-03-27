@@ -278,6 +278,7 @@
         <div class="nav-user" id="nav-username" style="display:none">
             안녕하세요, <span id="username-display"></span>님
         </div>
+        <a href="/timeline" id="btn-timeline" style="display:none; color:#a78bfa; text-decoration:none; font-size:0.88rem; font-weight:500;">📅 타임라인</a>
         <button id="btn-logout" style="display:none">로그아웃</button>
     </div>
 </nav>
@@ -719,6 +720,7 @@
         document.getElementById('nav-username').style.display = 'flex';
         document.getElementById('username-display').textContent = currentUsername;
         document.getElementById('btn-logout').style.display = 'block';
+        document.getElementById('btn-timeline').style.display = 'inline';
         loadHistory();
     }
 
@@ -727,6 +729,7 @@
         document.getElementById('main-panel').classList.remove('visible');
         document.getElementById('nav-username').style.display = 'none';
         document.getElementById('btn-logout').style.display = 'none';
+        document.getElementById('btn-timeline').style.display = 'none';
     }
 
     function handleUnauthorized() {
