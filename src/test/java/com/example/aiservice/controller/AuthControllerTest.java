@@ -1,18 +1,15 @@
 package com.example.aiservice.controller;
 
-import com.example.aiservice.config.PasswordEncoderConfig;
-import com.example.aiservice.config.SecurityConfig;
 import com.example.aiservice.dto.SignupRequest;
 import com.example.aiservice.entity.User;
-import com.example.aiservice.security.JwtAuthenticationFilter;
 import com.example.aiservice.security.JwtTokenProvider;
 import com.example.aiservice.service.UserService;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
-import org.springframework.context.annotation.Import;
 import org.springframework.http.MediaType;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.test.web.servlet.MockMvc;
@@ -23,7 +20,7 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 
 @WebMvcTest(AuthController.class)
-@Import({PasswordEncoderConfig.class, SecurityConfig.class})
+@AutoConfigureMockMvc(addFilters = false)
 class AuthControllerTest {
 
     @Autowired
@@ -31,7 +28,6 @@ class AuthControllerTest {
 
     @MockitoBean private UserService userService;
     @MockitoBean private JwtTokenProvider jwtTokenProvider;
-    @MockitoBean private JwtAuthenticationFilter jwtAuthenticationFilter;
     @MockitoBean private AuthenticationManager authenticationManager;
 
     @Autowired

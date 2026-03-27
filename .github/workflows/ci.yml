@@ -26,6 +26,15 @@ jobs:
           --health-interval=10s
           --health-timeout=5s
           --health-retries=5
+      redis:
+        image: redis:7.2-alpine
+        ports:
+          - 6379:6379
+        options: >-
+          --health-cmd="redis-cli ping"
+          --health-interval=10s
+          --health-timeout=5s
+          --health-retries=5
 
     env:
       SPRING_PROFILES_ACTIVE: test
@@ -34,6 +43,9 @@ jobs:
       DB_PASSWORD: ci_password
       JWT_SECRET: ci-test-jwt-secret-key-for-github-actions-ci!!
       OPENAI_API_KEY: ""   # 시뮬레이션 모드
+      REDIS_HOST: localhost
+      REDIS_PORT: 6379
+      REDIS_PASSWORD: ""
 
     steps:
       - name: Checkout
