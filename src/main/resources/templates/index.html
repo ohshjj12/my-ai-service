@@ -352,6 +352,7 @@
         <a href="#features">기능</a>
         <a href="#how">사용방법</a>
         <a href="#api">API</a>
+        <a href="/timeline">타임라인</a>
         <a href="/app" class="btn-nav">시작하기 →</a>
     </div>
 </nav>
@@ -394,34 +395,34 @@
     <p>간단한 API 호출만으로 초음파 이미지 분석 결과를 바로 받아볼 수 있습니다.</p>
     <div class="features-grid">
         <div class="feature-card">
+            <div class="feature-icon">🤖</div>
+            <h3>GPT-4o Vision 분석</h3>
+            <p>OpenAI GPT-4o Vision으로 초음파 이미지를 분석하고 한국어 전문 리포트를 생성합니다.</p>
+        </div>
+        <div class="feature-card">
+            <div class="feature-icon">�</div>
+            <h3>성장 타임라인</h3>
+            <p>임신 주차별 초음파 기록을 타임라인으로 관리합니다. 주차별 표준 성장 정보도 함께 확인하세요.</p>
+        </div>
+        <div class="feature-card">
+            <div class="feature-icon">✨</div>
+            <h3>SNS 공유 카드</h3>
+            <p>분석 결과를 예쁜 카드로 생성하여 카카오톡, 인스타그램 등 SNS에 바로 공유할 수 있습니다.</p>
+        </div>
+        <div class="feature-card">
+            <div class="feature-icon">�</div>
+            <h3>JWT 인증</h3>
+            <p>Access Token + Refresh Token 기반 보안 인증으로 내 분석 결과를 안전하게 관리합니다.</p>
+        </div>
+        <div class="feature-card">
             <div class="feature-icon">⚡</div>
             <h3>빠른 분석</h3>
-            <p>Java 21 Virtual Thread 기반으로 비동기 처리되어 응답 속도가 빠릅니다.</p>
+            <p>Java 21 Virtual Thread 기반 비동기 처리로 업로드 즉시 AI 분석 결과를 받아볼 수 있습니다.</p>
         </div>
         <div class="feature-card">
-            <div class="feature-icon">🔒</div>
-            <h3>보안 인증</h3>
-            <p>회원가입 및 로그인을 통해 본인의 분석 결과만 안전하게 조회할 수 있습니다.</p>
-        </div>
-        <div class="feature-card">
-            <div class="feature-icon">📊</div>
-            <h3>결과 이력 관리</h3>
-            <p>분석한 모든 이미지의 예측 결과와 신뢰도를 언제든지 다시 확인할 수 있습니다.</p>
-        </div>
-        <div class="feature-card">
-            <div class="feature-icon">🔌</div>
+            <div class="feature-icon">�</div>
             <h3>REST API</h3>
-            <p>표준 REST API를 제공하여 어떤 플랫폼에서도 쉽게 연동할 수 있습니다.</p>
-        </div>
-        <div class="feature-card">
-            <div class="feature-icon">☁️</div>
-            <h3>클라우드 운영</h3>
-            <p>안정적인 서버 환경에서 24시간 운영되며 언제든지 접근 가능합니다.</p>
-        </div>
-        <div class="feature-card">
-            <div class="feature-icon">🖼️</div>
-            <h3>다양한 이미지 형식</h3>
-            <p>JPEG, PNG 등 일반적인 이미지 포맷을 모두 지원합니다. 최대 10MB.</p>
+            <p>표준 REST API를 제공하여 어떤 플랫폼에서도 쉽게 연동할 수 있습니다. 최대 10MB 이미지 지원.</p>
         </div>
     </div>
 </section>
@@ -441,17 +442,17 @@
             <div class="step">
                 <div class="step-num">2</div>
                 <h3>로그인</h3>
-                <p>API 요청 시 Basic Auth 인증 정보를 포함합니다.</p>
+                <p>JWT 토큰을 발급받아 API 요청에 사용합니다.</p>
             </div>
             <div class="step">
                 <div class="step-num">3</div>
                 <h3>이미지 업로드</h3>
-                <p>초음파 이미지를 multipart/form-data로 전송합니다.</p>
+                <p>초음파 이미지를 드래그앤드롭하거나 API로 전송합니다.</p>
             </div>
             <div class="step">
                 <div class="step-num">4</div>
-                <h3>결과 확인</h3>
-                <p>예측 성별과 신뢰도를 JSON으로 즉시 받습니다.</p>
+                <h3>결과 공유</h3>
+                <p>AI 분석 결과를 확인하고 SNS에 공유하세요.</p>
             </div>
         </div>
     </section>
@@ -466,20 +467,19 @@
         <div class="api-card">
             <div class="api-card-header">
                 <span class="method post">POST</span>
-                <span class="api-path">/api/auth/signup</span>
+                <span class="api-path">/api/auth/login</span>
             </div>
             <pre>
 <span class="key"># Request Body (JSON)</span>
 {
   <span class="key">"username"</span>: <span class="str">"hong"</span>,
-  <span class="key">"password"</span>: <span class="str">"password123"</span>,
-  <span class="key">"email"</span>: <span class="str">"hong@example.com"</span>
+  <span class="key">"password"</span>: <span class="str">"password123"</span>
 }
 
-<span class="key"># Response 201</span>
+<span class="key"># Response 200</span>
 {
-  <span class="key">"message"</span>: <span class="str">"User registered successfully"</span>,
-  <span class="key">"username"</span>: <span class="str">"hong"</span>
+  <span class="key">"accessToken"</span>: <span class="str">"eyJhbGci..."</span>,
+  <span class="key">"tokenType"</span>: <span class="str">"Bearer"</span>
 }</pre>
         </div>
         <div class="api-card">
@@ -489,49 +489,52 @@
             </div>
             <pre>
 <span class="key"># Request (multipart/form-data)</span>
-<span class="key">Authorization</span>: Basic {base64}
+<span class="key">Authorization</span>: Bearer {accessToken}
 <span class="key">file</span>: &lt;image file&gt;
+<span class="key">weekNumber</span>: <span class="val">20</span>  <span class="key"># 선택</span>
 
-<span class="key"># Response 200</span>
+<span class="key"># Response 202</span>
 {
+  <span class="key">"predictionId"</span>: <span class="val">42</span>,
+  <span class="key">"analysisStatus"</span>: <span class="str">"DONE"</span>,
   <span class="key">"predictedGender"</span>: <span class="str">"MALE"</span>,
-  <span class="key">"confidenceScore"</span>: <span class="val">0.9231</span>,
-  <span class="key">"analyzedAt"</span>: <span class="str">"2026-03-26T..."</span>
+  <span class="key">"confidenceScore"</span>: <span class="val">0.9231</span>
 }</pre>
         </div>
         <div class="api-card">
             <div class="api-card-header">
                 <span class="method get">GET</span>
-                <span class="api-path">/api/predictions/my-results</span>
+                <span class="api-path">/api/pregnancies/{id}/timeline</span>
             </div>
             <pre>
-<span class="key"># Request Headers</span>
-<span class="key">Authorization</span>: Basic {base64}
+<span class="key"># 임신별 성장 타임라인 조회</span>
+<span class="key">Authorization</span>: Bearer {accessToken}
 
 <span class="key"># Response 200</span>
-[
-  {
-    <span class="key">"predictionId"</span>: <span class="val">1</span>,
-    <span class="key">"originalFileName"</span>: <span class="str">"scan.jpg"</span>,
-    <span class="key">"predictedGender"</span>: <span class="str">"FEMALE"</span>,
-    <span class="key">"confidenceScore"</span>: <span class="val">0.8754</span>
-  }
-]</pre>
+{
+  <span class="key">"pregnancyId"</span>: <span class="val">1</span>,
+  <span class="key">"nickname"</span>: <span class="str">"우리 아기"</span>,
+  <span class="key">"currentWeekInfo"</span>: { <span class="key">"week"</span>: <span class="val">20</span>, ... },
+  <span class="key">"items"</span>: [ ... ]
+}</pre>
         </div>
         <div class="api-card">
             <div class="api-card-header">
                 <span class="method get">GET</span>
-                <span class="api-path">/api/predictions/my-results</span>
+                <span class="api-path">/share/{id}</span>
             </div>
             <pre>
-<span class="key"># Basic Auth 생성 방법</span>
-<span class="key">username:password</span> → Base64 인코딩
+<span class="key"># SNS 공유 페이지 (인증 불필요)</span>
+<span class="key"># OG 메타태그 포함 — 카카오톡/인스타 공유 가능</span>
+
+<span class="key"># 공유 카드 이미지 (PNG)</span>
+GET /share/{id}/card.png
 
 <span class="key"># curl 예시</span>
-curl -u hong:password123 \
+curl -H <span class="str">"Authorization: Bearer eyJ..."</span> \
   -F <span class="str">"file=@scan.jpg"</span> \
-  https://my-ai.kpearl.net
-    /api/predictions/analyze</pre>
+  -F <span class="str">"weekNumber=20"</span> \
+  https://my-ai.kpearl.net/api/predictions/analyze</pre>
         </div>
     </div>
 </section>
