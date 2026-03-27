@@ -49,7 +49,7 @@ public class SecurityConfig {
             .headers(headers -> headers.frameOptions(HeadersConfigurer.FrameOptionsConfig::disable))
             .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
             .authorizeHttpRequests(auth -> auth
-                .requestMatchers("/", "/app", "/timeline", "/css/**", "/js/**", "/images/**").permitAll()
+                .requestMatchers("/", "/app", "/timeline", "/share/**", "/css/**", "/js/**", "/images/**").permitAll()
                 .requestMatchers("/api/auth/**").permitAll()
                 .requestMatchers("/actuator/health", "/actuator/health/**").permitAll()  // K8s probe
                 .requestMatchers(HttpMethod.OPTIONS, "/**").permitAll()

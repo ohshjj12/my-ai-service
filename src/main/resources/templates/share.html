@@ -1,0 +1,367 @@
+<!DOCTYPE html>
+<html lang="ko" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <!-- ===== Open Graph / SNS 공유 메타태그 ===== -->
+    <th:block th:if="${error == null}">
+        <title th:text="'우리 아기는 ' + ${genderEmoji} + ' ' + ${genderText} + '예요! | Baby Scan AI'">공유 결과 | Baby Scan AI</title>
+        <meta property="og:type" content="website">
+        <meta property="og:site_name" content="Baby Scan AI">
+        <meta property="og:title" th:content="'우리 아기는 ' + ${genderEmoji} + ' ' + ${genderText} + '예요!'">
+        <meta property="og:description"
+              th:content="${reportText != null ? reportText : '초음파 AI 분석으로 태아 성별을 예측했어요 🍼'}">
+        <meta property="og:image" th:content="'https://my-ai.kpearl.net/share/' + ${predictionId} + '/card.png'">
+        <meta property="og:image:width" content="800">
+        <meta property="og:image:height" content="450">
+        <meta property="og:url" th:content="'https://my-ai.kpearl.net/share/' + ${predictionId}">
+        <!-- Twitter Card -->
+        <meta name="twitter:card" content="summary_large_image">
+        <meta name="twitter:title" th:content="'우리 아기는 ' + ${genderEmoji} + ' ' + ${genderText} + '예요!'">
+        <meta name="twitter:description"
+              th:content="${reportText != null ? reportText : '초음파 AI 분석으로 태아 성별을 예측했어요 🍼'}">
+        <meta name="twitter:image" th:content="'https://my-ai.kpearl.net/share/' + ${predictionId} + '/card.png'">
+    </th:block>
+    <th:block th:unless="${error == null}">
+        <title>결과를 찾을 수 없음 | Baby Scan AI</title>
+    </th:block>
+
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: 'Segoe UI', 'Apple SD Gothic Neo', sans-serif;
+            background: #0a0a0f;
+            color: #e0e0e0;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+        }
+
+        /* NAV */
+        nav {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 16px 40px;
+            background: rgba(10,10,15,0.95);
+            border-bottom: 1px solid rgba(255,255,255,0.06);
+        }
+        .nav-logo {
+            font-weight: 700;
+            font-size: 1.1rem;
+            color: #e0e0e0;
+            text-decoration: none;
+            background: linear-gradient(135deg, #6c63ff, #48cae4);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+        nav a.cta-btn {
+            padding: 8px 20px;
+            background: linear-gradient(135deg, #6c63ff, #48cae4);
+            color: #fff;
+            border-radius: 999px;
+            text-decoration: none;
+            font-size: 0.88rem;
+            font-weight: 600;
+        }
+
+        /* MAIN */
+        .page-wrap {
+            flex: 1;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 60px 20px;
+        }
+        .share-card {
+            width: 100%;
+            max-width: 600px;
+            background: rgba(255,255,255,0.03);
+            border: 1px solid rgba(255,255,255,0.08);
+            border-radius: 24px;
+            overflow: hidden;
+            box-shadow: 0 24px 80px rgba(0,0,0,0.5);
+        }
+
+        /* 카드 이미지 */
+        .card-image-wrap {
+            width: 100%;
+            background: #111;
+            line-height: 0;
+        }
+        .card-image-wrap img {
+            width: 100%;
+            height: auto;
+            display: block;
+        }
+        .card-image-wrap .img-placeholder {
+            height: 280px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 3rem;
+        }
+
+        /* 카드 바디 */
+        .card-body {
+            padding: 36px 40px;
+        }
+        .gender-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            padding: 6px 18px;
+            border-radius: 999px;
+            font-size: 0.88rem;
+            font-weight: 600;
+            margin-bottom: 20px;
+        }
+        .gender-badge.male  { background: rgba(108,99,255,0.15); color: #a78bfa; border: 1px solid rgba(108,99,255,0.3); }
+        .gender-badge.female { background: rgba(255,143,171,0.15); color: #ff8fab; border: 1px solid rgba(255,143,171,0.3); }
+
+        .result-headline {
+            font-size: 1.8rem;
+            font-weight: 800;
+            margin-bottom: 12px;
+            line-height: 1.2;
+        }
+        .result-sub {
+            color: #888;
+            font-size: 0.88rem;
+            margin-bottom: 24px;
+        }
+
+        /* 신뢰도 바 */
+        .confidence-section {
+            margin-bottom: 24px;
+        }
+        .confidence-label {
+            display: flex;
+            justify-content: space-between;
+            font-size: 0.82rem;
+            color: #666;
+            margin-bottom: 8px;
+        }
+        .confidence-bar-bg {
+            height: 8px;
+            background: rgba(255,255,255,0.07);
+            border-radius: 999px;
+            overflow: hidden;
+        }
+        .confidence-bar-fill {
+            height: 100%;
+            border-radius: 999px;
+            transition: width 1s ease;
+        }
+        .confidence-bar-fill.male   { background: linear-gradient(90deg, #6c63ff, #48cae4); }
+        .confidence-bar-fill.female { background: linear-gradient(90deg, #ff6b9d, #ffb347); }
+
+        /* 리포트 */
+        .report-box {
+            background: rgba(255,255,255,0.02);
+            border: 1px solid rgba(255,255,255,0.06);
+            border-radius: 12px;
+            padding: 20px 24px;
+            font-size: 0.9rem;
+            color: #bbb;
+            line-height: 1.8;
+            margin-bottom: 28px;
+        }
+
+        /* 메타 정보 */
+        .meta-row {
+            display: flex;
+            gap: 20px;
+            flex-wrap: wrap;
+            font-size: 0.8rem;
+            color: #555;
+            margin-bottom: 28px;
+        }
+        .meta-row span { display: flex; align-items: center; gap: 4px; }
+
+        /* CTA 버튼들 */
+        .action-row {
+            display: flex;
+            gap: 12px;
+            flex-wrap: wrap;
+        }
+        .btn-primary {
+            flex: 1;
+            min-width: 140px;
+            padding: 12px 20px;
+            background: linear-gradient(135deg, #6c63ff, #48cae4);
+            color: #fff;
+            border: none;
+            border-radius: 10px;
+            font-size: 0.9rem;
+            font-weight: 600;
+            cursor: pointer;
+            text-align: center;
+            text-decoration: none;
+            transition: opacity 0.2s;
+        }
+        .btn-primary:hover { opacity: 0.85; }
+        .btn-secondary {
+            flex: 1;
+            min-width: 140px;
+            padding: 12px 20px;
+            background: transparent;
+            color: #aaa;
+            border: 1px solid rgba(255,255,255,0.12);
+            border-radius: 10px;
+            font-size: 0.9rem;
+            cursor: pointer;
+            transition: border-color 0.2s, color 0.2s;
+        }
+        .btn-secondary:hover { border-color: #6c63ff; color: #6c63ff; }
+
+        /* 에러 상태 */
+        .error-wrap {
+            text-align: center;
+            padding: 80px 40px;
+        }
+        .error-wrap .error-icon { font-size: 3rem; margin-bottom: 20px; }
+        .error-wrap h2 { font-size: 1.3rem; color: #888; margin-bottom: 12px; }
+        .error-wrap p { color: #555; font-size: 0.9rem; margin-bottom: 28px; }
+
+        /* FOOTER */
+        footer {
+            text-align: center;
+            padding: 24px;
+            color: #444;
+            font-size: 0.78rem;
+            border-top: 1px solid rgba(255,255,255,0.04);
+        }
+        footer a { color: #6c63ff; text-decoration: none; }
+
+        /* TOAST */
+        #toast {
+            position: fixed; bottom: 32px; left: 50%; transform: translateX(-50%) translateY(20px);
+            background: rgba(30,30,40,0.95); color: #e0e0e0;
+            padding: 12px 24px; border-radius: 999px;
+            font-size: 0.85rem; opacity: 0; transition: opacity 0.3s, transform 0.3s;
+            pointer-events: none; white-space: nowrap;
+            border: 1px solid rgba(255,255,255,0.1);
+            box-shadow: 0 8px 32px rgba(0,0,0,0.4);
+            z-index: 999;
+        }
+        #toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+
+        @media (max-width: 520px) {
+            nav { padding: 14px 20px; }
+            .card-body { padding: 24px 20px; }
+            .result-headline { font-size: 1.4rem; }
+        }
+    </style>
+</head>
+<body>
+
+<nav>
+    <a href="/" class="nav-logo">✦ Baby Scan AI</a>
+    <a href="/app" class="cta-btn">나도 분석하기 →</a>
+</nav>
+
+<div class="page-wrap">
+
+    <!-- 에러 상태 -->
+    <div th:if="${error != null}" class="share-card">
+        <div class="error-wrap">
+            <div class="error-icon">🔍</div>
+            <h2>결과를 찾을 수 없어요</h2>
+            <p th:text="${error}">공유된 결과가 존재하지 않거나 삭제되었습니다.</p>
+            <a href="/app" class="btn-primary" style="display:inline-block;">서비스 이용하기</a>
+        </div>
+    </div>
+
+    <!-- 정상 결과 -->
+    <div th:unless="${error != null}" class="share-card">
+
+        <!-- 공유 카드 이미지 -->
+        <div class="card-image-wrap">
+            <img th:src="${cardImageUrl}" alt="Baby AI 공유 카드"
+                 onerror="this.style.display='none'; document.getElementById('img-fallback').style.display='flex';">
+            <div id="img-fallback" class="img-placeholder" style="display:none;"
+                 th:text="${genderEmoji}">👶</div>
+        </div>
+
+        <!-- 결과 내용 -->
+        <div class="card-body">
+            <div th:class="${isMale ? 'gender-badge male' : 'gender-badge female'}">
+                <span th:text="${genderEmoji}">👶</span>
+                <span th:text="${genderText}">아이</span> 예측
+            </div>
+
+            <div class="result-headline"
+                 th:text="'우리 아기는 ' + ${genderEmoji} + ' ' + ${genderText} + '예요!'">
+                우리 아기 결과
+            </div>
+            <div class="result-sub">AI 초음파 분석 결과입니다 · 본 결과는 참고용이며 의료적 진단이 아닙니다</div>
+
+            <!-- 신뢰도 바 -->
+            <div class="confidence-section">
+                <div class="confidence-label">
+                    <span>AI 예측 신뢰도</span>
+                    <span th:text="${confidencePct} + '%'">0%</span>
+                </div>
+                <div class="confidence-bar-bg">
+                    <div th:class="${isMale ? 'confidence-bar-fill male' : 'confidence-bar-fill female'}"
+                         th:style="'width:' + ${confidencePct} + '%'"
+                         id="conf-bar" style="width:0%"></div>
+                </div>
+            </div>
+
+            <!-- AI 리포트 -->
+            <div class="report-box" th:if="${reportText != null}" th:text="${reportText}">
+                리포트 내용
+            </div>
+
+            <!-- 메타 정보 -->
+            <div class="meta-row">
+                <span th:if="${weekNumber != null}">📅 <span th:text="${weekNumber} + '주차'"></span></span>
+                <span th:if="${analyzedAt != null}">
+                    🕐 <span th:text="${#temporals.format(analyzedAt, 'yyyy.MM.dd')}"></span>
+                </span>
+                <span>🤖 GPT-4o Vision 분석</span>
+            </div>
+
+            <!-- 액션 버튼 -->
+            <div class="action-row">
+                <button class="btn-secondary" onclick="copyLink()">🔗 링크 복사</button>
+                <a href="/app" class="btn-primary">나도 분석해보기 →</a>
+            </div>
+        </div>
+    </div>
+
+</div>
+
+<footer>
+    &copy; 2025 <a href="/">Baby Scan AI</a> · AI 결과는 참고용이며 의료적 진단이 아닙니다
+</footer>
+
+<div id="toast"></div>
+
+<script th:inline="javascript">
+    // 신뢰도 바 애니메이션
+    window.addEventListener('DOMContentLoaded', () => {
+        const bar = document.getElementById('conf-bar');
+        if (bar) {
+            const target = bar.style.width; // Thymeleaf가 이미 세팅한 값
+            bar.style.width = '0%';
+            setTimeout(() => { bar.style.width = target; }, 200);
+        }
+    });
+
+    function copyLink() {
+        navigator.clipboard.writeText(location.href).then(() => showToast('링크가 복사되었습니다! 🔗'));
+    }
+
+    function showToast(msg) {
+        const t = document.getElementById('toast');
+        t.textContent = msg;
+        t.classList.add('show');
+        setTimeout(() => t.classList.remove('show'), 2500);
+    }
+</script>
+</body>
+</html>

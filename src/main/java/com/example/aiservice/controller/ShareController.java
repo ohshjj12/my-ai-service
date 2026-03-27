@@ -11,17 +11,16 @@ import org.springframework.web.bind.annotation.*;
  * SNS 공유 카드 API
  */
 @RestController
-@RequestMapping("/api/predictions")
 @RequiredArgsConstructor
 public class ShareController {
 
     private final ShareCardService shareCardService;
 
     /**
-     * 공유 카드 이미지(PNG) 다운로드.
+     * 인증된 사용자의 공유 카드 이미지(PNG) 다운로드.
      * GET /api/predictions/{id}/share-card
      */
-    @GetMapping(value = "/{id}/share-card", produces = MediaType.IMAGE_PNG_VALUE)
+    @GetMapping(value = "/api/predictions/{id}/share-card", produces = MediaType.IMAGE_PNG_VALUE)
     public ResponseEntity<byte[]> getShareCard(
             @PathVariable Long id,
             Authentication authentication) throws Exception {
@@ -30,6 +29,20 @@ public class ShareController {
         return ResponseEntity.ok()
                 .contentType(MediaType.IMAGE_PNG)
                 .header("Content-Disposition", "inline; filename=\"baby-card-" + id + ".png\"")
+                .body(imageBytes);
+    }
+
+    /**
+     * 공개 공유 카드 이미지(PNG) - 인증 불필요, OG 이미지용.
+     * GET /share/{id}/card.png
+     */
+    @GetMapping(value = "/share/{id}/card.png", produces = MediaType.IMAGE_PNG_VALUE)
+    public ResponseEntity<byte[]> getPublicShareCard(@PathVariable Long id) throws Exception {
+        byte[] imageBytes = shareCardService.generatePublicCard(id);
+        return ResponseEntity.ok()
+                .contentType(MediaType.IMAGE_PNG)
+                .header("Content-Disposition", "inline; filename=\"baby-card-" + id + ".png\"")
+                .header("Cache-Control", "public, max-age=3600")
                 .body(imageBytes);
     }
 }

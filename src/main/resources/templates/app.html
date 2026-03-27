@@ -388,6 +388,27 @@
                     <div class="value" style="font-size:0.95rem" id="result-time">-</div>
                 </div>
             </div>
+            <!-- AI 리포트 -->
+            <div id="result-report-wrap" style="display:none; margin-top:20px; padding:16px 20px;
+                 background:rgba(255,255,255,0.02); border:1px solid rgba(255,255,255,0.06);
+                 border-radius:12px; font-size:0.88rem; color:#bbb; line-height:1.8;">
+            </div>
+            <!-- 공유 버튼 -->
+            <div id="result-share-wrap" style="display:none; margin-top:20px; display:flex; gap:10px;">
+                <button id="btn-copy-link" onclick="copyShareLink()"
+                    style="flex:1; padding:10px 16px; border-radius:10px; border:1px solid rgba(255,255,255,0.12);
+                           background:transparent; color:#aaa; font-size:0.85rem; cursor:pointer;
+                           transition:border-color 0.2s,color 0.2s;">
+                    🔗 링크 복사
+                </button>
+                <a id="btn-open-share" href="#" target="_blank"
+                    style="flex:1; padding:10px 16px; border-radius:10px; text-align:center;
+                           background:linear-gradient(135deg,#6c63ff,#48cae4); color:#fff;
+                           text-decoration:none; font-size:0.85rem; font-weight:600;
+                           transition:opacity 0.2s;">
+                    ✨ 공유 페이지 열기
+                </a>
+            </div>
         </div>
 
         <!-- HISTORY CARD -->
@@ -664,8 +685,34 @@
         const analyzedAt = r.analyzedAt ? new Date(r.analyzedAt).toLocaleString('ko-KR') : '-';
         document.getElementById('result-time').textContent = analyzedAt;
 
+        // 리포트 표시
+        const reportWrap = document.getElementById('result-report-wrap');
+        if (r.reportText) {
+            reportWrap.textContent = r.reportText;
+            reportWrap.style.display = 'block';
+        } else {
+            reportWrap.style.display = 'none';
+        }
+
+        // 공유 버튼 표시 (분석 완료 시)
+        const shareWrap = document.getElementById('result-share-wrap');
+        if ((status === 'DONE' || status === 'COMPLETED') && r.predictionId) {
+            const shareUrl = location.origin + '/share/' + r.predictionId;
+            document.getElementById('btn-open-share').href = shareUrl;
+            shareWrap.style.display = 'flex';
+            window._lastShareUrl = shareUrl;
+        } else {
+            shareWrap.style.display = 'none';
+        }
+
         if (status === 'DONE' || status === 'COMPLETED') showToast('분석 완료!', 'success');
         else if (status === 'FAILED') showToast('분석에 실패했습니다.', 'error');
+    }
+
+    function copyShareLink() {
+        const url = window._lastShareUrl;
+        if (!url) return;
+        navigator.clipboard.writeText(url).then(() => showToast('공유 링크가 복사되었습니다! 🔗', 'success'));
     }
 
     // ── 이력 조회 ────────────────────────────────────────────

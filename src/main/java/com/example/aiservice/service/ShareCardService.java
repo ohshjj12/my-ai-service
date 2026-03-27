@@ -33,6 +33,23 @@ public class ShareCardService {
     private static final DateTimeFormatter DATE_FMT = DateTimeFormatter.ofPattern("yyyy.MM.dd");
 
     /**
+     * 공개 공유 페이지용 - 인증 없이 분석 결과 조회 (소유자 정보 포함)
+     */
+    public PredictionResult getPublicResult(Long predictionId) {
+        return predictionResultRepository.findById(predictionId)
+                .orElseThrow(() -> new IllegalArgumentException("공유 결과를 찾을 수 없습니다: " + predictionId));
+    }
+
+    /**
+     * 인증 없이 공유 카드 PNG 생성 (공개 공유 URL용)
+     */
+    public byte[] generatePublicCard(Long predictionId) throws IOException {
+        PredictionResult result = predictionResultRepository.findById(predictionId)
+                .orElseThrow(() -> new IllegalArgumentException("분석 결과를 찾을 수 없습니다: " + predictionId));
+        return renderCard(result);
+    }
+
+    /**
      * 분석 결과 ID + 사용자 기준으로 공유 카드 PNG 바이트 배열을 생성합니다.
      */
     public byte[] generateCard(Long predictionId, String username) throws IOException {
