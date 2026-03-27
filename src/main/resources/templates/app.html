@@ -608,7 +608,7 @@
                 } else {
                     document.getElementById('progress-label').textContent = 'AI 분석 중... (최대 30초 소요)';
                     showToast('분석 요청 완료! 결과를 기다리는 중...', 'success');
-                    pollStatus(predictionId);
+                    waitForResult(predictionId);
                 }
             } else {
                 showToast(data.message || '분석 요청 실패', 'error');
@@ -622,10 +622,72 @@
         }
     }
 
-    // ── 상태 폴링 ────────────────────────────────────────────
-    function pollStatus(predictionId) {
+    // ── 결과 대기 (SSE → 폴링 fallback) ─────────────────────
+    function waitForResult(predictionId) {
+        let sseOk = false;
+
+        // SSE 시도
+        try {
+            const evtSource = new EventSource(
+                `/api/predictions/${predictionId}/subscribe`,
+                { headers: { 'Authorization': 'Bearer ' + accessToken } }
+            );
+
+            // fetch API로 SSE (Authorization 헤더 지원)
+            const ctrl = new AbortController();
+            const timeoutId = setTimeout(() => {
+                ctrl.abort();
+                if (!sseOk) fallbackPollStatus(predictionId);
+            }, 35000);
+
+            fetch(`/api/predictions/${predictionId}/subscribe`, {
+                headers: { 'Authorization': 'Bearer ' + accessToken },
+                signal: ctrl.signal
+            }).then(res => {
+                if (!res.ok || !res.body) { fallbackPollStatus(predictionId); return; }
+                const reader = res.body.getReader();
+                const decoder = new TextDecoder();
+                let buffer = '';
+
+                function read() {
+                    reader.read().then(({ done, value }) => {
+                        if (done) { clearTimeout(timeoutId); return; }
+                        buffer += decoder.decode(value, { stream: true });
+                        const lines = buffer.split('\n');
+                        buffer = lines.pop();
+
+                        for (const line of lines) {
+                            if (line.startsWith('data:')) {
+                                const rawData = line.slice(5).trim();
+                                if (rawData === 'ok') { sseOk = true; continue; } // connected 이벤트
+                                try {
+                                    const result = JSON.parse(rawData);
+                                    clearTimeout(timeoutId);
+                                    showResult(result);
+                                    document.getElementById('analysis-progress').style.display = 'none';
+                                    document.getElementById('btn-analyze').disabled = false;
+                                    loadHistory();
+                                } catch(_) {}
+                            }
+                        }
+                        read();
+                    }).catch(() => {
+                        clearTimeout(timeoutId);
+                        if (!sseOk) fallbackPollStatus(predictionId);
+                    });
+                }
+                read();
+            }).catch(() => fallbackPollStatus(predictionId));
+
+        } catch(e) {
+            fallbackPollStatus(predictionId);
+        }
+    }
+
+    // ── 폴링 Fallback ─────────────────────────────────────────
+    function fallbackPollStatus(predictionId) {
         let attempts = 0;
-        const maxAttempts = 60; // 최대 60초
+        const maxAttempts = 60;
 
         clearInterval(pollingTimer);
         pollingTimer = setInterval(async () => {
@@ -638,7 +700,8 @@
                 const data = await res.json();
                 if (data.success) {
                     const r = data.data;
-                    if (r.status === 'COMPLETED' || r.status === 'FAILED' || attempts >= maxAttempts) {
+                    const st = r.analysisStatus || r.status;
+                    if (st === 'DONE' || st === 'COMPLETED' || st === 'FAILED' || attempts >= maxAttempts) {
                         clearInterval(pollingTimer);
                         showResult(r);
                         document.getElementById('analysis-progress').style.display = 'none';
@@ -647,7 +710,7 @@
                     }
                 }
             } catch(_) {}
-        }, 1000);
+        }, 1500);
     }
 
     function showResult(r) {

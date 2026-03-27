@@ -3,12 +3,15 @@ package com.example.aiservice.controller;
 import com.example.aiservice.dto.ApiResponse;
 import com.example.aiservice.dto.PredictionResponse;
 import com.example.aiservice.service.PredictionService;
+import com.example.aiservice.service.SseEmitterService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
+import org.springframework.web.servlet.mvc.method.annotation.SseEmitter;
 
 import java.io.IOException;
 import java.util.List;
@@ -19,6 +22,7 @@ import java.util.List;
 public class PredictionController {
 
     private final PredictionService predictionService;
+    private final SseEmitterService sseEmitterService;
 
     /**
      * 초음파 이미지 업로드 + 분석 큐 등록.
@@ -56,6 +60,18 @@ public class PredictionController {
             Authentication authentication) {
         PredictionResponse response = predictionService.getResultById(id, authentication.getName());
         return ResponseEntity.ok(ApiResponse.success(response));
+    }
+
+    /**
+     * SSE 실시간 분석 완료 알림 구독.
+     * GET /api/predictions/{id}/subscribe
+     * 분석이 완료되면 'analysis-complete' 이벤트를 전송하고 연결을 닫습니다.
+     */
+    @GetMapping(value = "/{id}/subscribe", produces = MediaType.TEXT_EVENT_STREAM_VALUE)
+    public SseEmitter subscribeAnalysis(
+            @PathVariable Long id,
+            Authentication authentication) {
+        return sseEmitterService.subscribe(authentication.getName(), id);
     }
 }
 

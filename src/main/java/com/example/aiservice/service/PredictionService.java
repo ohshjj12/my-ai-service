@@ -38,6 +38,7 @@ public class PredictionService {
     private final OpenAiVisionClient openAiVisionClient;
     private final PregnancyRepository pregnancyRepository;
     private final AnalysisQueueService analysisQueueService;
+    private final SseEmitterService sseEmitterService;
 
     /**
      * 이미지를 저장하고 분석 요청을 큐에 등록합니다.
@@ -136,6 +137,14 @@ public class PredictionService {
         }
 
         predictionResultRepository.save(result);
+
+        // SSE로 완료 이벤트 전송 (구독 중인 경우에만)
+        try {
+            String username = result.getUltrasoundImage().getUser().getUsername();
+            sseEmitterService.notifyAnalysisComplete(username, predictionResultId, mapToResponse(result));
+        } catch (Exception e) {
+            log.debug("SSE 이벤트 전송 실패 (무시): {}", e.getMessage());
+        }
     }
 
     public List<PredictionResponse> getResultsByUser(String username) {
