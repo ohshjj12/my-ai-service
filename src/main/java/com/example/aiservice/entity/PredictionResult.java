@@ -14,11 +14,16 @@ public class PredictionResult {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @Column(nullable = false)
     private String predictedGender;
 
-    @Column(nullable = false)
     private Double confidenceScore;
+
+    @Enumerated(EnumType.STRING)
+    @Column(nullable = false)
+    private AnalysisStatus analysisStatus = AnalysisStatus.PENDING;
+
+    @Column(columnDefinition = "TEXT")
+    private String reportText;
 
     @Column(nullable = false)
     private LocalDateTime analyzedAt = LocalDateTime.now();

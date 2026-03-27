@@ -23,12 +23,20 @@ public class UltrasoundImage {
     @Column(nullable = false)
     private Long fileSize;
 
+    private String storedFilePath;
+
+    private Integer weekNumber; // 임신 주차
+
     @Column(nullable = false)
     private LocalDateTime uploadedAt = LocalDateTime.now();
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "user_id", nullable = false)
     private User user;
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "pregnancy_id")
+    private Pregnancy pregnancy;
 
     @OneToOne(mappedBy = "ultrasoundImage", cascade = CascadeType.ALL)
     private PredictionResult predictionResult;
