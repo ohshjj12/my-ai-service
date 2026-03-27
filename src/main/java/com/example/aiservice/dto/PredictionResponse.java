@@ -12,6 +12,8 @@ public class PredictionResponse {
     private String originalFileName;
     private String predictedGender;
     private Double confidenceScore;
+    private String analysisStatus;
+    private String reportText;
     private LocalDateTime analyzedAt;
     private String uploadedBy;
 }
