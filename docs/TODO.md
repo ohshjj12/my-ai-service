@@ -109,7 +109,7 @@
 - [x] 분석 요청을 큐에 넣고 즉시 `202 Accepted` 응답
 - [x] `analysisStatus` 상태 API (`GET /api/predictions/{id}/status`)
 - [x] 분석 완료 시 상태 업데이트 (`PENDING` → `DONE`)
-- [ ] (선택) WebSocket or SSE로 실시간 완료 알림
+- [x] (선택) SSE로 실시간 완료 알림 (`GET /api/predictions/{id}/subscribe`)
 
 ---
 
